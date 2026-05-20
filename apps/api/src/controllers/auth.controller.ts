@@ -4,10 +4,14 @@ import { userRepository } from "../repositories/user.repository.js";
 import { AppError } from "../middleware/error-handler.js";
 import { env } from "../config/env.js";
 
+// In production the web app and API are different sites bridged by a Vercel
+// proxy, so the cookie is first-party to the web origin but the OAuth flow
+// bounces through Google. SameSite=None (with Secure) is required for the
+// cookie to be stored and sent reliably across that bounce.
 const COOKIE_OPTIONS = {
   httpOnly: true,
   secure: env.NODE_ENV === "production",
-  sameSite: env.NODE_ENV === "production" ? ("lax" as const) : ("lax" as const),
+  sameSite: env.NODE_ENV === "production" ? ("none" as const) : ("lax" as const),
   path: "/",
 };
 
