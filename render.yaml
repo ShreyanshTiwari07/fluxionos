@@ -9,7 +9,6 @@ services:
     region: oregon
     rootDir: .
     buildCommand: >-
-      corepack enable &&
       pnpm install --frozen-lockfile &&
       pnpm --filter @fluxionos/shared build &&
       pnpm --filter @fluxionos/api build
