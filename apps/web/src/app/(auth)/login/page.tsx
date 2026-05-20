@@ -1,6 +1,7 @@
 "use client";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+// Empty => same-origin (Next.js rewrite proxies /api/* to the backend).
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
 
 export default function LoginPage() {
   const handleLogin = () => {

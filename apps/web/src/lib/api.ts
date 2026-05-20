@@ -1,4 +1,7 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+// Empty => same-origin (the Next.js rewrite proxies /api/* to the backend,
+// keeping the session cookie first-party). Set NEXT_PUBLIC_API_URL only for
+// local dev where the API runs on a different origin.
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
 
 export async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`${API_URL}${path}`, {
