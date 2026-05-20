@@ -1,0 +1,49 @@
+# Render blueprint for the FluxionOS API + workers (single free web service).
+# Postgres -> Neon (free), Redis -> Upstash (free) are set as env vars below.
+# See DEPLOY.md for the full step-by-step.
+services:
+  - type: web
+    name: fluxionos-api
+    runtime: node
+    plan: free
+    region: oregon
+    rootDir: .
+    buildCommand: >-
+      corepack enable &&
+      pnpm install --frozen-lockfile &&
+      pnpm --filter @fluxionos/shared build &&
+      pnpm --filter @fluxionos/api build
+    # Run pending migrations, then start the API (which also runs the workers).
+    startCommand: >-
+      pnpm --filter @fluxionos/api run db:migrate &&
+      pnpm --filter @fluxionos/api start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      # Single free service hosts the API AND the BullMQ workers.
+      - key: RUN_WORKERS
+        value: "true"
+      # Render injects PORT automatically; the app binds to it.
+
+      # ---- Fill these in the Render dashboard (do NOT commit secrets) ----
+      - key: DATABASE_URL # Neon pooled connection string (?sslmode=require)
+        sync: false
+      - key: REDIS_URL # Upstash rediss:// URL
+        sync: false
+      - key: WEB_URL # your Vercel URL, e.g. https://fluxionos.vercel.app
+        sync: false
+      - key: API_URL # this service's URL, e.g. https://fluxionos-api.onrender.com
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: GOOGLE_REDIRECT_URI # https://<api>.onrender.com/api/auth/google/callback
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: ENCRYPTION_KEY # 32-byte hex; set manually (openssl rand -hex 32)
+        sync: false

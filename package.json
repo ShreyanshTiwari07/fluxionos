@@ -1,0 +1,20 @@
+{
+  "name": "fluxionos",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Personal Email Automation OS",
+  "packageManager": "pnpm@10.33.0",
+  "scripts": {
+    "dev": "pnpm --parallel -r run dev",
+    "build": "pnpm -r run build",
+    "lint": "pnpm -r run lint",
+    "typecheck": "pnpm -r run typecheck",
+    "test": "pnpm -r run test",
+    "db:migrate": "pnpm --filter @fluxionos/api run db:migrate",
+    "db:migrate:down": "pnpm --filter @fluxionos/api run db:migrate:down"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=9.0.0"
+  }
+}
