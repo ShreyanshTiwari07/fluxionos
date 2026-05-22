@@ -4,7 +4,7 @@ import { emailRepository } from "../repositories/email.repository.js";
 import { followUpRepository } from "../repositories/follow-up.repository.js";
 import { userRepository } from "../repositories/user.repository.js";
 import { gmailService } from "../services/gmail.service.js";
-import { geminiService } from "../services/gemini.service.js";
+import { geminiService, GeminiError } from "../services/gemini.service.js";
 import type { SendFollowUpJobData } from "../queues/email.queue.js";
 import { logger } from "../utils/logger.js";
 
@@ -39,6 +39,15 @@ async function processSendFollowUp(job: Job<SendFollowUpJobData>) {
       await followUpRepository.updateStatus(followUpId, "pending", { follow_up_body: body });
     } catch (err) {
       const msg = err instanceof Error ? err.message : "AI generation failed";
+      const retryable = err instanceof GeminiError && err.retryable;
+      const isLastAttempt = job.attemptsMade + 1 >= (job.opts.attempts || 3);
+
+      // Transient (e.g. 429 rate limit): let BullMQ retry with backoff.
+      if (retryable && !isLastAttempt) {
+        logger.warn({ followUpId, error: msg }, "AI generation transient error; will retry");
+        throw err;
+      }
+
       logger.error({ followUpId, error: msg }, "AI follow-up generation failed; not sending");
       await followUpRepository.updateStatus(followUpId, "failed", {
         error_message: `AI generation failed: ${msg}`,

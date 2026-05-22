@@ -1,5 +1,5 @@
 import type { Request, Response, NextFunction } from "express";
-import { geminiService } from "../services/gemini.service.js";
+import { geminiService, GeminiError } from "../services/gemini.service.js";
 import { userRepository } from "../repositories/user.repository.js";
 import { AppError } from "../middleware/error-handler.js";
 
@@ -23,7 +23,10 @@ export const aiController = {
       res.json({ success: true, data: { follow_up_body: followUpBody } });
     } catch (err) {
       if (err instanceof AppError) return next(err);
-      // Surface generation failures as a clean 502 rather than a 500.
+      // Map Gemini rate limits to 429; other generation failures to 502.
+      if (err instanceof GeminiError) {
+        return next(new AppError(err.status === 429 ? 429 : 502, err.message));
+      }
       next(new AppError(502, err instanceof Error ? err.message : "AI generation failed"));
     }
   },
