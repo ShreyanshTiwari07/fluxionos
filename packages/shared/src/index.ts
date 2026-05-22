@@ -1,14 +1,25 @@
 // Types
 export type { User } from "./types/user.js";
 export type { Email, ScheduleEmailInput } from "./types/email.js";
-export type { FollowUp, CreateFollowUpInput } from "./types/follow-up.js";
+export type {
+  FollowUp,
+  CreateFollowUpInput,
+  FollowUpConfigInput,
+  FollowUpMode,
+  AiFollowUpPreviewInput,
+} from "./types/follow-up.js";
 export type { Draft, CreateDraftInput, UpdateDraftInput } from "./types/draft.js";
 export type { ApiResponse, PaginatedResponse, EmailStats } from "./types/api.js";
 
 // Schemas
 export { userSchema, FREE_TIER_LIMIT } from "./types/user.js";
 export { scheduleEmailSchema } from "./types/email.js";
-export { createFollowUpSchema } from "./types/follow-up.js";
+export {
+  createFollowUpSchema,
+  followUpConfigSchema,
+  aiFollowUpPreviewSchema,
+  FOLLOW_UP_MODE,
+} from "./types/follow-up.js";
 export { createDraftSchema, updateDraftSchema } from "./types/draft.js";
 
 // Constants

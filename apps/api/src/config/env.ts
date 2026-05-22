@@ -35,4 +35,8 @@ export const env = {
 
   // Encryption
   ENCRYPTION_KEY: process.env.ENCRYPTION_KEY || "0".repeat(64),
+
+  // Gemini (AI-powered follow-ups)
+  GEMINI_API_KEY: process.env.GEMINI_API_KEY || "",
+  GEMINI_MODEL: process.env.GEMINI_MODEL || "gemini-2.0-flash",
 } as const;

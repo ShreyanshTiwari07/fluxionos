@@ -1,19 +1,30 @@
 import { z } from "zod";
 import type { EmailStatus } from "../constants/email-status.js";
+import { followUpConfigSchema } from "./follow-up.js";
 
-export const scheduleEmailSchema = z.object({
-  to: z.array(z.string().email()).min(1),
-  cc: z.array(z.string().email()).optional(),
-  subject: z.string().min(1).max(998),
-  body: z.string().min(1),
-  scheduled_at: z.string().datetime(),
-  follow_up: z
-    .object({
-      delay_hours: z.number().int().min(1).max(720),
-      follow_up_body: z.string().min(1),
-    })
-    .optional(),
-});
+export const scheduleEmailSchema = z
+  .object({
+    to: z.array(z.string().email()).min(1),
+    cc: z.array(z.string().email()).optional(),
+    subject: z.string().min(1).max(998),
+    body: z.string().min(1),
+    scheduled_at: z.string().datetime(),
+    follow_up: followUpConfigSchema.optional(),
+  })
+  .superRefine((data, ctx) => {
+    // An absolute follow-up time must be after the email is scheduled to send.
+    if (data.follow_up?.follow_up_at) {
+      const followAt = new Date(data.follow_up.follow_up_at).getTime();
+      const sendAt = new Date(data.scheduled_at).getTime();
+      if (followAt <= sendAt) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Follow-up time must be after the email's scheduled time",
+          path: ["follow_up", "follow_up_at"],
+        });
+      }
+    }
+  });
 
 export type ScheduleEmailInput = z.infer<typeof scheduleEmailSchema>;
 

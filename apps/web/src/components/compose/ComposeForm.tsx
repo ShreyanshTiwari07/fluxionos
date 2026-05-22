@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { SchedulePicker } from "./SchedulePicker";
-import { FollowUpToggle } from "./FollowUpToggle";
+import { FollowUpToggle, type FollowUpUiState } from "./FollowUpToggle";
 import { useScheduleEmail } from "@/hooks/useEmails";
 import { useCreateDraft } from "@/hooks/useDrafts";
 import { useToast } from "@/components/ui/Toast";
@@ -22,8 +22,14 @@ export function ComposeForm() {
 
   // Follow-up state
   const [followUpEnabled, setFollowUpEnabled] = useState(false);
-  const [followUpDelay, setFollowUpDelay] = useState(48);
-  const [followUpBody, setFollowUpBody] = useState("");
+  const [followUp, setFollowUp] = useState<FollowUpUiState>({
+    mode: "manual",
+    timing: "relative",
+    delayHours: 48,
+    followUpAt: "",
+    body: "",
+    aiRegenerate: false,
+  });
 
   // Draft category
   const [draftCategory, setDraftCategory] = useState("uncategorized");
@@ -57,9 +63,21 @@ export function ComposeForm() {
       setError("Please select a schedule time");
       return;
     }
-    if (followUpEnabled && !followUpBody.trim()) {
-      setError("Follow-up message is required when follow-up is enabled");
-      return;
+    if (followUpEnabled) {
+      if (followUp.mode === "manual" && !followUp.body.trim()) {
+        setError("Follow-up message is required for a manual follow-up");
+        return;
+      }
+      if (followUp.timing === "absolute") {
+        if (!followUp.followUpAt) {
+          setError("Please pick a date & time for the follow-up");
+          return;
+        }
+        if (new Date(followUp.followUpAt).getTime() <= new Date(scheduledAt).getTime()) {
+          setError("Follow-up time must be after the email's scheduled time");
+          return;
+        }
+      }
     }
 
     try {
@@ -72,8 +90,12 @@ export function ComposeForm() {
         scheduled_at: scheduledAt,
         follow_up: followUpEnabled
           ? {
-              delay_hours: followUpDelay,
-              follow_up_body: followUpBody.trim(),
+              mode: followUp.mode,
+              ...(followUp.timing === "absolute"
+                ? { follow_up_at: followUp.followUpAt }
+                : { delay_hours: followUp.delayHours }),
+              follow_up_body: followUp.body.trim() || undefined,
+              ai_regenerate: followUp.mode === "ai" ? followUp.aiRegenerate : undefined,
             }
           : undefined,
       });
@@ -148,10 +170,10 @@ export function ComposeForm() {
       <FollowUpToggle
         enabled={followUpEnabled}
         onToggle={setFollowUpEnabled}
-        delayHours={followUpDelay}
-        onDelayChange={setFollowUpDelay}
-        body={followUpBody}
-        onBodyChange={setFollowUpBody}
+        value={followUp}
+        onChange={setFollowUp}
+        originalSubject={subject}
+        originalBody={body}
       />
 
       {/* Actions */}

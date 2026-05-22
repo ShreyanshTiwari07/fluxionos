@@ -14,7 +14,9 @@ interface EmailCardProps {
     status: string;
     follow_up: {
       id: string;
-      delay_hours: number;
+      mode: "manual" | "ai";
+      delay_hours: number | null;
+      follow_up_at: string | null;
       status: string;
       check_at: string | null;
     } | null;
@@ -34,12 +36,14 @@ function formatDate(iso: string): string {
 
 function getFollowUpLabel(followUp: EmailCardProps["email"]["follow_up"]): string | null {
   if (!followUp) return null;
+  const ai = followUp.mode === "ai" ? "AI " : "";
   if (followUp.status === "pending" && followUp.check_at) {
-    return `Follow-up scheduled for ${formatDate(followUp.check_at)}`;
+    return `${ai}Follow-up scheduled for ${formatDate(followUp.check_at)}`;
   }
-  if (followUp.status === "sent") return "Follow-up sent";
+  if (followUp.status === "sent") return `${ai}Follow-up sent`;
   if (followUp.status === "cancelled") return "Follow-up cancelled (reply received)";
-  if (followUp.status === "pending") return "Follow-up pending";
+  if (followUp.status === "failed") return "Follow-up failed";
+  if (followUp.status === "pending") return `${ai}Follow-up pending`;
   return null;
 }
 

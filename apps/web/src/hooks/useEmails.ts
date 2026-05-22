@@ -18,7 +18,9 @@ interface Email {
   created_at: string;
   follow_up: {
     id: string;
-    delay_hours: number;
+    mode: "manual" | "ai";
+    delay_hours: number | null;
+    follow_up_at: string | null;
     status: string;
     check_at: string | null;
   } | null;
@@ -42,16 +44,21 @@ interface ListResponse {
   };
 }
 
+export interface FollowUpInput {
+  mode: "manual" | "ai";
+  delay_hours?: number;
+  follow_up_at?: string;
+  follow_up_body?: string;
+  ai_regenerate?: boolean;
+}
+
 interface ScheduleInput {
   to: string[];
   cc?: string[];
   subject: string;
   body: string;
   scheduled_at: string;
-  follow_up?: {
-    delay_hours: number;
-    follow_up_body: string;
-  };
+  follow_up?: FollowUpInput;
 }
 
 export function useEmails(options?: { status?: string; page?: number }) {
@@ -87,6 +94,19 @@ export function useScheduleEmail() {
       queryClient.invalidateQueries({ queryKey: ["emails"] });
       queryClient.invalidateQueries({ queryKey: ["email-stats"] });
     },
+  });
+}
+
+export function useAiFollowUpPreview() {
+  return useMutation({
+    mutationFn: (data: { subject: string; body: string }) =>
+      apiFetch<{ success: boolean; data: { follow_up_body: string } }>(
+        "/api/ai/follow-up-preview",
+        {
+          method: "POST",
+          body: JSON.stringify(data),
+        },
+      ),
   });
 }
 

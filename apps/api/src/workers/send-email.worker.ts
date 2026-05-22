@@ -51,8 +51,11 @@ async function processSendEmail(job: Job<SendEmailJobData>) {
     // Check if there's a follow-up to schedule
     const followUp = await followUpRepository.findByEmailId(emailId);
     if (followUp && followUp.status === "pending") {
-      const checkAt = new Date(Date.now() + followUp.delay_hours * 3600 * 1000);
-      const delay = checkAt.getTime() - Date.now();
+      // Absolute follow-up time wins; otherwise it's relative to send time.
+      const checkAt = followUp.follow_up_at
+        ? new Date(followUp.follow_up_at)
+        : new Date(Date.now() + (followUp.delay_hours ?? 0) * 3600 * 1000);
+      const delay = Math.max(0, checkAt.getTime() - Date.now());
 
       await followUpRepository.updateStatus(followUp.id, "pending", {
         check_at: checkAt,

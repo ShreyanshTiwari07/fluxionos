@@ -8,7 +8,14 @@ import type { FollowUpStatus } from "@fluxionos/shared";
 export const followUpService = {
   async createFollowUp(
     userId: string,
-    data: { email_id: string; delay_hours: number; follow_up_body: string },
+    data: {
+      email_id: string;
+      mode?: "manual" | "ai";
+      delay_hours?: number;
+      follow_up_at?: string;
+      follow_up_body?: string;
+      ai_regenerate?: boolean;
+    },
   ) {
     const email = await emailRepository.findById(data.email_id);
     if (!email || email.user_id !== userId) {
@@ -26,17 +33,23 @@ export const followUpService = {
       throw new AppError(400, "Follow-ups can only be added to scheduled or sent emails");
     }
 
+    const followUpAt = data.follow_up_at ? new Date(data.follow_up_at) : null;
+
     const followUp = await followUpRepository.create({
       email_id: data.email_id,
       user_id: userId,
-      delay_hours: data.delay_hours,
-      follow_up_body: data.follow_up_body,
+      mode: data.mode ?? "manual",
+      delay_hours: data.delay_hours ?? null,
+      follow_up_at: followUpAt,
+      ai_regenerate: data.ai_regenerate ?? false,
+      follow_up_body: data.follow_up_body ?? null,
     });
 
     // If the email is already sent, schedule the reply check now
     if (email.status === "sent" && email.gmail_thread_id && email.gmail_message_id) {
-      const checkAt = new Date(Date.now() + data.delay_hours * 3600 * 1000);
-      const delay = checkAt.getTime() - Date.now();
+      // Absolute time if provided, otherwise relative to now.
+      const checkAt = followUpAt ?? new Date(Date.now() + (data.delay_hours ?? 0) * 3600 * 1000);
+      const delay = Math.max(0, checkAt.getTime() - Date.now());
 
       await followUpRepository.updateStatus(followUp.id, "pending", { check_at: checkAt });
 
