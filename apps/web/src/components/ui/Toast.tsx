@@ -46,13 +46,18 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
             role="alert"
             onClick={() => removeToast(t.id)}
             className={cn(
-              "animate-in slide-in-from-bottom-2 fade-in cursor-pointer rounded-lg px-4 py-3 text-sm font-medium shadow-lg transition",
-              "max-w-sm",
-              t.type === "success" && "bg-green-600 text-white",
-              t.type === "error" && "bg-red-600 text-white",
-              t.type === "info" && "bg-primary text-primary-foreground",
+              "animate-in slide-in-from-bottom-2 fade-in flex max-w-sm cursor-pointer items-center gap-2.5 rounded-xl border px-4 py-3 text-sm font-medium shadow-elevated backdrop-blur-xl transition",
+              "glass text-foreground",
             )}
           >
+            <span
+              className={cn(
+                "h-2 w-2 shrink-0 rounded-full",
+                t.type === "success" && "bg-success",
+                t.type === "error" && "bg-destructive",
+                t.type === "info" && "bg-primary",
+              )}
+            />
             {t.message}
           </div>
         ))}

@@ -100,7 +100,7 @@ export function SchedulePicker({ value, onChange }: SchedulePickerProps) {
           value={selectedDate ? toLocalDatetimeString(selectedDate) : ""}
           onChange={handleCustom}
           min={toLocalDatetimeString(new Date())}
-          className="w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+          className="field"
         />
       )}
 

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useDeleteDraft, useScheduleDraft } from "@/hooks/useDrafts";
 import { SchedulePicker } from "../compose/SchedulePicker";
 import { useToast } from "@/components/ui/Toast";
+import { Button } from "@/components/ui/button";
 
 interface DraftCardProps {
   draft: {
@@ -53,15 +54,15 @@ export function DraftCard({ draft }: DraftCardProps) {
   const canSchedule = draft.to && draft.to.length > 0 && draft.subject && draft.body;
 
   return (
-    <div className="rounded-lg border p-4 space-y-3">
+    <div className="space-y-3 rounded-2xl border border-border bg-card p-5 transition-colors hover:border-foreground/15">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
-          <p className="font-medium truncate">{draft.subject || "(No subject)"}</p>
-          <p className="text-sm text-muted-foreground truncate">
+          <p className="truncate font-medium">{draft.subject || "(No subject)"}</p>
+          <p className="truncate text-sm text-muted-foreground">
             {draft.to && draft.to.length > 0 ? `To: ${draft.to.join(", ")}` : "No recipients"}
           </p>
         </div>
-        <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+        <span className="inline-flex shrink-0 items-center rounded-full border border-border bg-secondary/60 px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
           {CATEGORY_LABELS[draft.category] || draft.category}
         </span>
       </div>
@@ -96,15 +97,15 @@ export function DraftCard({ draft }: DraftCardProps) {
       </div>
 
       {showSchedule && (
-        <div className="border-t pt-3 space-y-3">
+        <div className="space-y-3 border-t border-border pt-4">
           <SchedulePicker value={scheduledAt} onChange={setScheduledAt} />
-          <button
+          <Button
+            size="sm"
             onClick={handleSchedule}
             disabled={!scheduledAt || scheduleDraft.isPending}
-            className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 transition disabled:opacity-50"
           >
-            {scheduleDraft.isPending ? "Scheduling..." : "Schedule this draft"}
-          </button>
+            {scheduleDraft.isPending ? "Scheduling…" : "Schedule this draft"}
+          </Button>
         </div>
       )}
     </div>
