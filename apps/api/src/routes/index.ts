@@ -3,6 +3,7 @@ import authRoutes from "./auth.routes.js";
 import emailRoutes from "./email.routes.js";
 import followUpRoutes from "./follow-up.routes.js";
 import draftRoutes from "./draft.routes.js";
+import aiRoutes from "./ai.routes.js";
 
 const router = Router();
 
@@ -14,5 +15,6 @@ router.use("/auth", authRoutes);
 router.use("/emails", emailRoutes);
 router.use("/follow-ups", followUpRoutes);
 router.use("/drafts", draftRoutes);
+router.use("/ai", aiRoutes);
 
 export default router;

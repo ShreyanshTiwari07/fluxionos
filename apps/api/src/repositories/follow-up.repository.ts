@@ -1,12 +1,15 @@
 import { db } from "../config/database.js";
-import type { FollowUpStatus } from "@fluxionos/shared";
+import type { FollowUpStatus, FollowUpMode } from "@fluxionos/shared";
 
 export interface FollowUpRow {
   id: string;
   email_id: string;
   user_id: string;
-  delay_hours: number;
-  follow_up_body: string;
+  mode: FollowUpMode;
+  delay_hours: number | null;
+  follow_up_at: Date | null;
+  ai_regenerate: boolean;
+  follow_up_body: string | null;
   check_at: Date | null;
   sent_at: Date | null;
   status: FollowUpStatus;
@@ -20,14 +23,25 @@ export const followUpRepository = {
   async create(data: {
     email_id: string;
     user_id: string;
-    delay_hours: number;
-    follow_up_body: string;
+    mode?: FollowUpMode;
+    delay_hours?: number | null;
+    follow_up_at?: Date | null;
+    ai_regenerate?: boolean;
+    follow_up_body?: string | null;
   }): Promise<FollowUpRow> {
     const result = await db.query(
-      `INSERT INTO follow_ups (email_id, user_id, delay_hours, follow_up_body)
-       VALUES ($1, $2, $3, $4)
+      `INSERT INTO follow_ups (email_id, user_id, mode, delay_hours, follow_up_at, ai_regenerate, follow_up_body)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
        RETURNING *`,
-      [data.email_id, data.user_id, data.delay_hours, data.follow_up_body],
+      [
+        data.email_id,
+        data.user_id,
+        data.mode ?? "manual",
+        data.delay_hours ?? null,
+        data.follow_up_at ?? null,
+        data.ai_regenerate ?? false,
+        data.follow_up_body ?? null,
+      ],
     );
     return result.rows[0];
   },
@@ -86,6 +100,7 @@ export const followUpRepository = {
       sent_at?: Date;
       gmail_message_id?: string;
       error_message?: string;
+      follow_up_body?: string;
     },
   ): Promise<FollowUpRow | null> {
     const setClauses = ["status = $2", "updated_at = NOW()"];
@@ -94,6 +109,10 @@ export const followUpRepository = {
     if (extra?.check_at) {
       params.push(extra.check_at);
       setClauses.push(`check_at = $${params.length}`);
+    }
+    if (extra?.follow_up_body !== undefined) {
+      params.push(extra.follow_up_body);
+      setClauses.push(`follow_up_body = $${params.length}`);
     }
     if (extra?.sent_at) {
       params.push(extra.sent_at);

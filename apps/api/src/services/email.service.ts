@@ -16,8 +16,11 @@ export const emailService = {
       body: string;
       scheduled_at: string;
       follow_up?: {
-        delay_hours: number;
-        follow_up_body: string;
+        mode?: "manual" | "ai";
+        delay_hours?: number;
+        follow_up_at?: string;
+        follow_up_body?: string;
+        ai_regenerate?: boolean;
       };
     },
   ) {
@@ -50,11 +53,15 @@ export const emailService = {
 
     // Create follow-up if requested
     if (data.follow_up) {
+      const fu = data.follow_up;
       await followUpRepository.create({
         email_id: email.id,
         user_id: userId,
-        delay_hours: data.follow_up.delay_hours,
-        follow_up_body: data.follow_up.follow_up_body,
+        mode: fu.mode ?? "manual",
+        delay_hours: fu.delay_hours ?? null,
+        follow_up_at: fu.follow_up_at ? new Date(fu.follow_up_at) : null,
+        ai_regenerate: fu.ai_regenerate ?? false,
+        follow_up_body: fu.follow_up_body ?? null,
       });
     }
 
@@ -97,7 +104,9 @@ export const emailService = {
           follow_up: followUp
             ? {
                 id: followUp.id,
+                mode: followUp.mode,
                 delay_hours: followUp.delay_hours,
+                follow_up_at: followUp.follow_up_at,
                 status: followUp.status,
                 check_at: followUp.check_at,
               }

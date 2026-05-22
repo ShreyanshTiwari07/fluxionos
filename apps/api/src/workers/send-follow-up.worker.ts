@@ -4,6 +4,7 @@ import { emailRepository } from "../repositories/email.repository.js";
 import { followUpRepository } from "../repositories/follow-up.repository.js";
 import { userRepository } from "../repositories/user.repository.js";
 import { gmailService } from "../services/gmail.service.js";
+import { geminiService } from "../services/gemini.service.js";
 import type { SendFollowUpJobData } from "../queues/email.queue.js";
 import { logger } from "../utils/logger.js";
 
@@ -24,6 +25,36 @@ async function processSendFollowUp(job: Job<SendFollowUpJobData>) {
     return;
   }
 
+  // Resolve the body to send. For AI follow-ups, regenerate at send time when
+  // requested (preview left untouched) or when no body was stored. If Gemini
+  // fails, mark the follow-up failed and do NOT send anything.
+  let body = followUp.follow_up_body ?? "";
+  if (followUp.mode === "ai" && (followUp.ai_regenerate || !body.trim())) {
+    try {
+      body = await geminiService.generateFollowUpBody({
+        subject: email.subject,
+        body: email.body,
+      });
+      // Persist the generated body for the record.
+      await followUpRepository.updateStatus(followUpId, "pending", { follow_up_body: body });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "AI generation failed";
+      logger.error({ followUpId, error: msg }, "AI follow-up generation failed; not sending");
+      await followUpRepository.updateStatus(followUpId, "failed", {
+        error_message: `AI generation failed: ${msg}`,
+      });
+      return; // Skip & mark failed — no email sent.
+    }
+  }
+
+  if (!body.trim()) {
+    logger.warn({ followUpId }, "Follow-up has no body to send; marking failed");
+    await followUpRepository.updateStatus(followUpId, "failed", {
+      error_message: "No follow-up body available to send",
+    });
+    return;
+  }
+
   try {
     // Get the Message-ID header for proper threading
     const messageIdHeader = await gmailService.getMessageHeader(
@@ -36,7 +67,7 @@ async function processSendFollowUp(job: Job<SendFollowUpJobData>) {
     const result = await gmailService.sendEmail(userId, {
       to: email.to,
       subject: `Re: ${email.subject}`,
-      body: followUp.follow_up_body,
+      body,
       threadId: gmailThreadId,
       inReplyTo: messageIdHeader || undefined,
       references: messageIdHeader || undefined,
