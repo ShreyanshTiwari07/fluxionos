@@ -1,26 +1,25 @@
 "use client";
 
 import Link from "next/link";
+import { PenSquare } from "lucide-react";
 import { DraftList } from "@/components/drafts/DraftList";
+import { Button } from "@/components/ui/button";
 
 export default function DraftsPage() {
   return (
-    <div>
-      <div className="flex items-center justify-between">
+    <div className="space-y-8">
+      <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold">Drafts</h2>
-          <p className="mt-1 text-muted-foreground">Organize and schedule your saved drafts</p>
+          <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Drafts</h1>
+          <p className="mt-1.5 text-muted-foreground">Organize and schedule your saved drafts</p>
         </div>
-        <Link
-          href="/compose"
-          className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-sm hover:opacity-90 transition"
-        >
-          Compose
-        </Link>
+        <Button asChild size="sm">
+          <Link href="/compose">
+            <PenSquare className="h-4 w-4" /> Compose
+          </Link>
+        </Button>
       </div>
-      <div className="mt-6">
-        <DraftList />
-      </div>
+      <DraftList />
     </div>
   );
 }

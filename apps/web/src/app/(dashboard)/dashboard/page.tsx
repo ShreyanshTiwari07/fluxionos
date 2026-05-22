@@ -1,79 +1,96 @@
 "use client";
 
 import Link from "next/link";
+import {
+  CalendarClock,
+  CheckCircle2,
+  AlertTriangle,
+  Gauge,
+  PenSquare,
+  FileText,
+  ArrowRight,
+  type LucideIcon,
+} from "lucide-react";
 import { useAuthStore } from "@/stores/auth.store";
 import { useEmailStats } from "@/hooks/useEmails";
+import { StatCard, StatSkeleton } from "@/components/app/StatCard";
+
+const QUICK_ACTIONS: { href: string; title: string; desc: string; icon: LucideIcon }[] = [
+  { href: "/compose", title: "Compose", desc: "Write and schedule a new email", icon: PenSquare },
+  {
+    href: "/scheduled",
+    title: "Scheduled",
+    desc: "View upcoming and sent emails",
+    icon: CalendarClock,
+  },
+  { href: "/drafts", title: "Drafts", desc: "Manage your saved drafts", icon: FileText },
+];
 
 export default function DashboardPage() {
   const user = useAuthStore((s) => s.user);
   const { data: statsData, isLoading } = useEmailStats();
   const stats = statsData?.data;
+  const remaining = Math.max(0, 20 - (user?.monthly_send_count || 0));
 
   return (
-    <div>
-      <h2 className="text-2xl font-bold">
-        Welcome{user?.name ? `, ${user.name.split(" ")[0]}` : ""}
-      </h2>
-      <p className="mt-1 text-muted-foreground">
-        {user?.plan === "free"
-          ? `${Math.max(0, 20 - (user?.monthly_send_count || 0))} scheduled emails remaining this month`
-          : "Unlimited scheduling"}
-      </p>
+    <div className="space-y-10">
+      <header>
+        <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+          Welcome back{user?.name ? `, ${user.name.split(" ")[0]}` : ""}
+        </h1>
+        <p className="mt-1.5 text-muted-foreground">
+          {user?.plan === "free"
+            ? `${remaining} scheduled email${remaining === 1 ? "" : "s"} remaining this month`
+            : "Unlimited scheduling — you're on Pro"}
+        </p>
+      </header>
 
       {/* Stats */}
-      {isLoading ? (
-        <div className="mt-6 grid gap-4 sm:grid-cols-4">
-          {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="h-20 animate-pulse rounded-lg border bg-muted/50" />
-          ))}
-        </div>
-      ) : stats ? (
-        <div className="mt-6 grid gap-4 sm:grid-cols-4">
-          <div className="rounded-lg border p-4">
-            <p className="text-sm text-muted-foreground">Scheduled</p>
-            <p className="mt-1 text-2xl font-bold">{stats.scheduled}</p>
-          </div>
-          <div className="rounded-lg border p-4">
-            <p className="text-sm text-muted-foreground">Sent</p>
-            <p className="mt-1 text-2xl font-bold text-green-600">{stats.sent}</p>
-          </div>
-          <div className="rounded-lg border p-4">
-            <p className="text-sm text-muted-foreground">Failed</p>
-            <p className="mt-1 text-2xl font-bold text-red-600">{stats.failed}</p>
-          </div>
-          <div className="rounded-lg border p-4">
-            <p className="text-sm text-muted-foreground">Quota Left</p>
-            <p className="mt-1 text-2xl font-bold">
-              {stats.remaining_quota === -1 ? "\u221E" : stats.remaining_quota}
-            </p>
-          </div>
-        </div>
-      ) : null}
+      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {isLoading || !stats ? (
+          [0, 1, 2, 3].map((i) => <StatSkeleton key={i} />)
+        ) : (
+          <>
+            <StatCard label="Scheduled" value={stats.scheduled} icon={CalendarClock} />
+            <StatCard label="Sent" value={stats.sent} icon={CheckCircle2} tone="success" />
+            <StatCard
+              label="Failed"
+              value={stats.failed}
+              icon={AlertTriangle}
+              tone="destructive"
+            />
+            <StatCard
+              label="Quota left"
+              value={stats.remaining_quota === -1 ? "∞" : stats.remaining_quota}
+              icon={Gauge}
+              tone="primary"
+            />
+          </>
+        )}
+      </section>
 
       {/* Quick actions */}
-      <div className="mt-8 grid gap-4 sm:grid-cols-3">
-        <Link
-          href="/compose"
-          className="rounded-lg border p-5 hover:border-primary/50 hover:shadow-sm transition"
-        >
-          <h3 className="font-semibold">Compose</h3>
-          <p className="mt-1 text-sm text-muted-foreground">Write and schedule a new email</p>
-        </Link>
-        <Link
-          href="/scheduled"
-          className="rounded-lg border p-5 hover:border-primary/50 hover:shadow-sm transition"
-        >
-          <h3 className="font-semibold">Scheduled</h3>
-          <p className="mt-1 text-sm text-muted-foreground">View your upcoming emails</p>
-        </Link>
-        <Link
-          href="/drafts"
-          className="rounded-lg border p-5 hover:border-primary/50 hover:shadow-sm transition"
-        >
-          <h3 className="font-semibold">Drafts</h3>
-          <p className="mt-1 text-sm text-muted-foreground">Manage your saved drafts</p>
-        </Link>
-      </div>
+      <section>
+        <h2 className="mb-4 text-sm font-medium text-muted-foreground">Quick actions</h2>
+        <div className="grid gap-4 sm:grid-cols-3">
+          {QUICK_ACTIONS.map((a) => (
+            <Link
+              key={a.href}
+              href={a.href}
+              className="group relative overflow-hidden rounded-2xl border border-border bg-card p-5 transition-all hover:-translate-y-1 hover:border-foreground/15 hover:shadow-soft"
+            >
+              <div className="flex items-center justify-between">
+                <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-secondary/60 text-primary">
+                  <a.icon className="h-5 w-5" />
+                </span>
+                <ArrowRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-1" />
+              </div>
+              <h3 className="mt-4 font-semibold">{a.title}</h3>
+              <p className="mt-1 text-sm text-muted-foreground">{a.desc}</p>
+            </Link>
+          ))}
+        </div>
+      </section>
     </div>
   );
 }

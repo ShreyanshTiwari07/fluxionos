@@ -3,18 +3,22 @@ import { Inter } from "next/font/google";
 import { Providers } from "@/components/layout/Providers";
 import "./globals.css";
 
-const inter = Inter({ subsets: ["latin"] });
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-sans",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
-  title: "FluxionOS - Personal Email Automation",
+  title: "FluxionOS — Email automation that never forgets",
   description:
-    "Never forget to follow up. Send emails at the right time. Automate your communication like a pro.",
+    "Schedule emails, auto follow-up, and let AI write the nudge. The premium email automation OS for people who close loops.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      <body className={inter.className}>
+    <html lang="en" suppressHydrationWarning>
+      <body className={`${inter.variable} font-sans antialiased`}>
         <Providers>{children}</Providers>
       </body>
     </html>

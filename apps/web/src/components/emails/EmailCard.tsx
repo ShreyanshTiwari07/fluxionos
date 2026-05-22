@@ -61,13 +61,11 @@ export function EmailCard({ email }: EmailCardProps) {
   const followUpLabel = getFollowUpLabel(email.follow_up);
 
   return (
-    <div className="rounded-lg border p-4 space-y-2">
+    <div className="group space-y-3 rounded-2xl border border-border bg-card p-5 transition-colors hover:border-foreground/15">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
-          <p className="font-medium truncate">{email.subject}</p>
-          <p className="text-sm text-muted-foreground truncate">
-            To: {email.to.join(", ")}
-          </p>
+          <p className="truncate font-medium">{email.subject}</p>
+          <p className="truncate text-sm text-muted-foreground">To: {email.to.join(", ")}</p>
         </div>
         <StatusBadge status={email.status} />
       </div>
@@ -83,7 +81,7 @@ export function EmailCard({ email }: EmailCardProps) {
           <button
             onClick={handleCancel}
             disabled={cancelEmail.isPending}
-            className="text-destructive hover:underline disabled:opacity-50"
+            className="font-medium text-destructive transition-opacity hover:opacity-80 disabled:opacity-50"
           >
             Cancel
           </button>
@@ -91,7 +89,7 @@ export function EmailCard({ email }: EmailCardProps) {
       </div>
 
       {followUpLabel && (
-        <div className="flex items-center gap-1.5 text-xs">
+        <div className="flex items-center gap-2 border-t border-border pt-3 text-xs">
           <span className="inline-block h-1.5 w-1.5 rounded-full bg-primary" />
           <span className="text-muted-foreground">{followUpLabel}</span>
         </div>

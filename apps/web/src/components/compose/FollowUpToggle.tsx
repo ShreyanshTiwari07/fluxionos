@@ -265,7 +265,7 @@ export function FollowUpToggle({
                   if (!isNaN(d.getTime())) set({ followUpAt: d.toISOString() });
                 }}
                 min={toLocalDatetimeString(new Date())}
-                className="mt-2 w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                className="field mt-2"
               />
             )}
 
@@ -310,7 +310,7 @@ export function FollowUpToggle({
                   : "Hi, just following up on my previous email..."
               }
               rows={4}
-              className="mt-1.5 w-full rounded-md border px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
+              className="mt-1.5 field resize-none"
             />
             <p className="mt-1 text-xs text-muted-foreground">
               {value.mode === "ai" ? (

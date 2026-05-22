@@ -4,9 +4,11 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { SchedulePicker } from "./SchedulePicker";
 import { FollowUpToggle, type FollowUpUiState } from "./FollowUpToggle";
+import { Send, Save } from "lucide-react";
 import { useScheduleEmail } from "@/hooks/useEmails";
 import { useCreateDraft } from "@/hooks/useDrafts";
 import { useToast } from "@/components/ui/Toast";
+import { Button } from "@/components/ui/button";
 
 export function ComposeForm() {
   const router = useRouter();
@@ -115,6 +117,7 @@ export function ComposeForm() {
         </div>
       )}
 
+      <div className="space-y-5 rounded-2xl border border-border bg-card p-5 sm:p-6">
       {/* To */}
       <div>
         <label className="text-sm font-medium">To</label>
@@ -123,7 +126,7 @@ export function ComposeForm() {
           value={to}
           onChange={(e) => setTo(e.target.value)}
           placeholder="email@example.com (comma-separated for multiple)"
-          className="mt-1.5 w-full rounded-md border px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+          className="mt-1.5 field"
         />
       </div>
 
@@ -135,7 +138,7 @@ export function ComposeForm() {
           value={cc}
           onChange={(e) => setCc(e.target.value)}
           placeholder="cc@example.com"
-          className="mt-1.5 w-full rounded-md border px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+          className="mt-1.5 field"
         />
       </div>
 
@@ -147,7 +150,7 @@ export function ComposeForm() {
           value={subject}
           onChange={(e) => setSubject(e.target.value)}
           placeholder="Email subject"
-          className="mt-1.5 w-full rounded-md border px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+          className="mt-1.5 field"
         />
       </div>
 
@@ -159,8 +162,10 @@ export function ComposeForm() {
           onChange={(e) => setBody(e.target.value)}
           placeholder="Write your email here..."
           rows={8}
-          className="mt-1.5 w-full rounded-md border px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
+          className="mt-1.5 field resize-none"
         />
+      </div>
+
       </div>
 
       {/* Schedule Picker */}
@@ -177,28 +182,26 @@ export function ComposeForm() {
       />
 
       {/* Actions */}
-      <div className="flex flex-col gap-3 pt-2 sm:flex-row sm:items-center">
-        <button
-          type="submit"
-          disabled={scheduleEmail.isPending}
-          className="rounded-lg bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm hover:opacity-90 transition disabled:opacity-50"
-        >
-          {scheduleEmail.isPending ? "Scheduling..." : "Schedule Email"}
-        </button>
+      <div className="flex flex-col gap-3 pt-1 sm:flex-row sm:items-center sm:justify-between">
+        <Button type="submit" size="lg" disabled={scheduleEmail.isPending}>
+          <Send className="h-4 w-4" />
+          {scheduleEmail.isPending ? "Scheduling…" : "Schedule email"}
+        </Button>
 
         <div className="flex items-center gap-2">
           <select
             value={draftCategory}
             onChange={(e) => setDraftCategory(e.target.value)}
-            className="rounded-md border px-2 py-2 text-sm text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+            className="field h-10 w-auto py-0 text-muted-foreground"
           >
             <option value="uncategorized">Uncategorized</option>
             <option value="cold_outreach">Cold Outreach</option>
             <option value="reminder">Reminder</option>
             <option value="personal">Personal</option>
           </select>
-          <button
+          <Button
             type="button"
+            variant="outline"
             disabled={createDraft.isPending}
             onClick={async () => {
               setError("");
@@ -216,10 +219,10 @@ export function ComposeForm() {
                 setError(err instanceof Error ? err.message : "Failed to save draft");
               }
             }}
-            className="rounded-lg border px-4 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted transition disabled:opacity-50"
           >
-            {createDraft.isPending ? "Saving..." : "Save as Draft"}
-          </button>
+            <Save className="h-4 w-4" />
+            {createDraft.isPending ? "Saving…" : "Save draft"}
+          </Button>
         </div>
       </div>
     </form>
