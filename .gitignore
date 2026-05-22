@@ -8,3 +8,5 @@ dist/
 coverage/
 .turbo/
 PRD.md
+# TypeScript incremental build info
+*.tsbuildinfo
