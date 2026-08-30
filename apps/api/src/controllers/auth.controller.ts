@@ -3,6 +3,7 @@ import { authService } from "../services/auth.service.js";
 import { userRepository } from "../repositories/user.repository.js";
 import { AppError } from "../middleware/error-handler.js";
 import { env } from "../config/env.js";
+import { logger } from "../utils/logger.js";
 
 // In production the web app and API are different sites bridged by a Vercel
 // proxy, so the cookie is first-party to the web origin but the OAuth flow
@@ -28,23 +29,31 @@ export const authController = {
     res.redirect(authUrl);
   },
 
-  async googleCallback(req: Request, res: Response, next: NextFunction) {
+  async googleCallback(req: Request, res: Response, _next: NextFunction) {
+    // Never surface a raw 500 here: this endpoint is a browser navigation, so
+    // an unhandled error dumps JSON at the user mid-login. Send them back to
+    // the login page with a reason instead, and log the real cause.
+    const fail = (reason: string, err?: unknown) => {
+      logger.error({ err, reason }, "Google OAuth callback failed");
+      res.redirect(`${env.WEB_URL}/login?error=${reason}`);
+    };
+
+    const { code, state } = req.query;
+    const savedState = req.cookies?.oauth_state;
+
+    if (!code || typeof code !== "string") {
+      return fail("missing_code");
+    }
+
+    if (!state || state !== savedState) {
+      return fail("invalid_state");
+    }
+
     try {
-      const { code, state } = req.query;
-      const savedState = req.cookies?.oauth_state;
-
-      if (!code || typeof code !== "string") {
-        throw new AppError(400, "Missing authorization code");
-      }
-
-      if (!state || state !== savedState) {
-        throw new AppError(400, "Invalid state parameter");
-      }
-
       // Clear the state cookie
       res.clearCookie("oauth_state", COOKIE_OPTIONS);
 
-      const { accessToken, refreshToken, user } = await authService.exchangeCode(code);
+      const { accessToken, refreshToken } = await authService.exchangeCode(code);
 
       // Set auth cookies
       res.cookie("access_token", accessToken, {
@@ -60,7 +69,7 @@ export const authController = {
       // Redirect to frontend dashboard
       res.redirect(`${env.WEB_URL}/dashboard`);
     } catch (err) {
-      next(err);
+      fail("server_error", err);
     }
   },
 

@@ -1,12 +1,35 @@
 "use client";
 
+import { Suspense } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { Logo } from "@/components/landing/Logo";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 
 // Empty => same-origin (Next.js rewrite proxies /api/* to the backend).
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
+
+// Reasons the API redirects back here when the OAuth callback fails.
+const LOGIN_ERRORS: Record<string, string> = {
+  missing_code: "Google didn't return an authorization code. Please try again.",
+  invalid_state: "Your sign-in session expired or was blocked. Please try again.",
+  server_error: "Something went wrong finishing sign-in. Please try again in a moment.",
+};
+
+function LoginError() {
+  const error = useSearchParams().get("error");
+  if (!error) return null;
+
+  return (
+    <div
+      role="alert"
+      className="mt-6 rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive"
+    >
+      {LOGIN_ERRORS[error] ?? "Sign-in failed. Please try again."}
+    </div>
+  );
+}
 
 export default function LoginPage() {
   const handleLogin = () => {
@@ -45,6 +68,10 @@ export default function LoginPage() {
             <p className="mt-2 text-center text-sm text-muted-foreground">
               Sign in to schedule emails and automate your follow-ups.
             </p>
+
+            <Suspense fallback={null}>
+              <LoginError />
+            </Suspense>
 
             <button
               onClick={handleLogin}
