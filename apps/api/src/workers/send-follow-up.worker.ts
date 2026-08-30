@@ -1,5 +1,5 @@
 import { Worker, type Job } from "bullmq";
-import { redis } from "../config/redis.js";
+import { WORKER_OPTIONS } from "./options.js";
 import { emailRepository } from "../repositories/email.repository.js";
 import { followUpRepository } from "../repositories/follow-up.repository.js";
 import { userRepository } from "../repositories/user.repository.js";
@@ -105,10 +105,7 @@ async function processSendFollowUp(job: Job<SendFollowUpJobData>) {
 }
 
 export function createSendFollowUpWorker() {
-  const worker = new Worker("send-follow-up", processSendFollowUp, {
-    connection: redis,
-    concurrency: 5,
-  });
+  const worker = new Worker("send-follow-up", processSendFollowUp, WORKER_OPTIONS);
 
   worker.on("failed", (job, err) => {
     logger.error({ jobId: job?.id, error: err.message }, "Send-follow-up job failed");

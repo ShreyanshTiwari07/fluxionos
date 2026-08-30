@@ -1,5 +1,5 @@
 import { Worker, type Job } from "bullmq";
-import { redis } from "../config/redis.js";
+import { WORKER_OPTIONS } from "./options.js";
 import { followUpRepository } from "../repositories/follow-up.repository.js";
 import { gmailService } from "../services/gmail.service.js";
 import { sendFollowUpQueue, type CheckReplyJobData } from "../queues/email.queue.js";
@@ -50,10 +50,7 @@ async function processCheckReply(job: Job<CheckReplyJobData>) {
 }
 
 export function createCheckReplyWorker() {
-  const worker = new Worker("check-reply", processCheckReply, {
-    connection: redis,
-    concurrency: 5,
-  });
+  const worker = new Worker("check-reply", processCheckReply, WORKER_OPTIONS);
 
   worker.on("failed", (job, err) => {
     logger.error({ jobId: job?.id, error: err.message }, "Check-reply job failed");
