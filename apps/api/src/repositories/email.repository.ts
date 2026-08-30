@@ -29,7 +29,7 @@ export const emailRepository = {
     scheduled_at: Date;
   }): Promise<EmailRow> {
     const result = await db.query(
-      `INSERT INTO emails (user_id, "to", cc, subject, body, scheduled_at)
+      `INSERT INTO fluxion_emails (user_id, "to", cc, subject, body, scheduled_at)
        VALUES ($1, $2, $3, $4, $5, $6)
        RETURNING *`,
       [data.user_id, data.to, data.cc || null, data.subject, data.body, data.scheduled_at],
@@ -38,7 +38,7 @@ export const emailRepository = {
   },
 
   async findById(id: string): Promise<EmailRow | null> {
-    const result = await db.query("SELECT * FROM emails WHERE id = $1", [id]);
+    const result = await db.query("SELECT * FROM fluxion_emails WHERE id = $1", [id]);
     return result.rows[0] || null;
   },
 
@@ -57,13 +57,13 @@ export const emailRepository = {
     }
 
     const countResult = await db.query(
-      `SELECT COUNT(*) as total FROM emails ${whereClause}`,
+      `SELECT COUNT(*) as total FROM fluxion_emails ${whereClause}`,
       params,
     );
 
     params.push(limit, offset);
     const result = await db.query(
-      `SELECT * FROM emails ${whereClause} ORDER BY scheduled_at DESC LIMIT $${params.length - 1} OFFSET $${params.length}`,
+      `SELECT * FROM fluxion_emails ${whereClause} ORDER BY scheduled_at DESC LIMIT $${params.length - 1} OFFSET $${params.length}`,
       params,
     );
 
@@ -104,7 +104,7 @@ export const emailRepository = {
     }
 
     const result = await db.query(
-      `UPDATE emails SET ${setClauses.join(", ")} WHERE id = $1 RETURNING *`,
+      `UPDATE fluxion_emails SET ${setClauses.join(", ")} WHERE id = $1 RETURNING *`,
       params,
     );
     return result.rows[0] || null;
@@ -112,7 +112,7 @@ export const emailRepository = {
 
   async incrementRetry(id: string): Promise<void> {
     await db.query(
-      "UPDATE emails SET retry_count = retry_count + 1, updated_at = NOW() WHERE id = $1",
+      "UPDATE fluxion_emails SET retry_count = retry_count + 1, updated_at = NOW() WHERE id = $1",
       [id],
     );
   },
@@ -127,7 +127,7 @@ export const emailRepository = {
         COUNT(*) FILTER (WHERE status = 'scheduled') as scheduled,
         COUNT(*) FILTER (WHERE status = 'sent') as sent,
         COUNT(*) FILTER (WHERE status = 'failed') as failed
-       FROM emails WHERE user_id = $1`,
+       FROM fluxion_emails WHERE user_id = $1`,
       [userId],
     );
     const row = result.rows[0];

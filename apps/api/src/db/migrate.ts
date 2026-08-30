@@ -12,8 +12,23 @@ const pool = new pg.Pool({
 });
 
 async function ensureMigrationsTable() {
+  // This project shares its database with another application, so its tables
+  // carry a fluxion_ prefix. Carry the old tracker's rows across rather than
+  // starting empty, which would re-apply every migration against a schema that
+  // already has them. Guarded on the target not existing, so it runs exactly
+  // once and can never adopt another application's _migrations table.
+  const { rows } = await pool.query(
+    `SELECT to_regclass('public.fluxion_migrations') AS target,
+            to_regclass('public._migrations')        AS legacy`,
+  );
+
+  if (!rows[0].target && rows[0].legacy) {
+    console.log("Renaming _migrations -> fluxion_migrations");
+    await pool.query("ALTER TABLE _migrations RENAME TO fluxion_migrations");
+  }
+
   await pool.query(`
-    CREATE TABLE IF NOT EXISTS _migrations (
+    CREATE TABLE IF NOT EXISTS fluxion_migrations (
       id SERIAL PRIMARY KEY,
       name VARCHAR(255) NOT NULL UNIQUE,
       applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -22,7 +37,7 @@ async function ensureMigrationsTable() {
 }
 
 async function getAppliedMigrations(): Promise<string[]> {
-  const result = await pool.query("SELECT name FROM _migrations ORDER BY id");
+  const result = await pool.query("SELECT name FROM fluxion_migrations ORDER BY id");
   return result.rows.map((r) => r.name);
 }
 
@@ -45,7 +60,7 @@ async function migrate() {
 
     console.log(`Applying migration: ${file}`);
     await pool.query(upSql);
-    await pool.query("INSERT INTO _migrations (name) VALUES ($1)", [file]);
+    await pool.query("INSERT INTO fluxion_migrations (name) VALUES ($1)", [file]);
     count++;
   }
 
@@ -82,18 +97,26 @@ async function rollback() {
 
   console.log(`Rolling back: ${lastMigration}`);
   await pool.query(downSql);
-  await pool.query("DELETE FROM _migrations WHERE name = $1", [lastMigration]);
+  await pool.query("DELETE FROM fluxion_migrations WHERE name = $1", [lastMigration]);
   console.log("Rolled back successfully.");
 }
 
 const command = process.argv[2];
 
+// Exit non-zero on failure. The deploy chains "db:migrate && start", so
+// swallowing the error here would start the API against a half-applied schema
+// — which is exactly how a users table missing its columns reached production.
+function fail(err: unknown) {
+  console.error(err);
+  process.exitCode = 1;
+}
+
 if (command === "down") {
   rollback()
-    .catch(console.error)
+    .catch(fail)
     .finally(() => pool.end());
 } else {
   migrate()
-    .catch(console.error)
+    .catch(fail)
     .finally(() => pool.end());
 }

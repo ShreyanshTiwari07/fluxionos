@@ -21,7 +21,7 @@ export const draftRepository = {
     category?: DraftCategory;
   }): Promise<DraftRow> {
     const result = await db.query(
-      `INSERT INTO drafts (user_id, "to", subject, body, category)
+      `INSERT INTO fluxion_drafts (user_id, "to", subject, body, category)
        VALUES ($1, $2, $3, $4, $5)
        RETURNING *`,
       [
@@ -36,7 +36,7 @@ export const draftRepository = {
   },
 
   async findById(id: string): Promise<DraftRow | null> {
-    const result = await db.query("SELECT * FROM drafts WHERE id = $1", [id]);
+    const result = await db.query("SELECT * FROM fluxion_drafts WHERE id = $1", [id]);
     return result.rows[0] || null;
   },
 
@@ -55,13 +55,13 @@ export const draftRepository = {
     }
 
     const countResult = await db.query(
-      `SELECT COUNT(*) as total FROM drafts ${whereClause}`,
+      `SELECT COUNT(*) as total FROM fluxion_drafts ${whereClause}`,
       params,
     );
 
     params.push(limit, offset);
     const result = await db.query(
-      `SELECT * FROM drafts ${whereClause} ORDER BY updated_at DESC LIMIT $${params.length - 1} OFFSET $${params.length}`,
+      `SELECT * FROM fluxion_drafts ${whereClause} ORDER BY updated_at DESC LIMIT $${params.length - 1} OFFSET $${params.length}`,
       params,
     );
 
@@ -101,14 +101,14 @@ export const draftRepository = {
     }
 
     const result = await db.query(
-      `UPDATE drafts SET ${setClauses.join(", ")} WHERE id = $1 RETURNING *`,
+      `UPDATE fluxion_drafts SET ${setClauses.join(", ")} WHERE id = $1 RETURNING *`,
       params,
     );
     return result.rows[0] || null;
   },
 
   async delete(id: string): Promise<boolean> {
-    const result = await db.query("DELETE FROM drafts WHERE id = $1", [id]);
+    const result = await db.query("DELETE FROM fluxion_drafts WHERE id = $1", [id]);
     return (result.rowCount ?? 0) > 0;
   },
 };

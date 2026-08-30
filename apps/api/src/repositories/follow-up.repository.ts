@@ -30,7 +30,7 @@ export const followUpRepository = {
     follow_up_body?: string | null;
   }): Promise<FollowUpRow> {
     const result = await db.query(
-      `INSERT INTO follow_ups (email_id, user_id, mode, delay_hours, follow_up_at, ai_regenerate, follow_up_body)
+      `INSERT INTO fluxion_follow_ups (email_id, user_id, mode, delay_hours, follow_up_at, ai_regenerate, follow_up_body)
        VALUES ($1, $2, $3, $4, $5, $6, $7)
        RETURNING *`,
       [
@@ -47,12 +47,12 @@ export const followUpRepository = {
   },
 
   async findById(id: string): Promise<FollowUpRow | null> {
-    const result = await db.query("SELECT * FROM follow_ups WHERE id = $1", [id]);
+    const result = await db.query("SELECT * FROM fluxion_follow_ups WHERE id = $1", [id]);
     return result.rows[0] || null;
   },
 
   async findByEmailId(emailId: string): Promise<FollowUpRow | null> {
-    const result = await db.query("SELECT * FROM follow_ups WHERE email_id = $1", [emailId]);
+    const result = await db.query("SELECT * FROM fluxion_follow_ups WHERE email_id = $1", [emailId]);
     return result.rows[0] || null;
   },
 
@@ -71,15 +71,15 @@ export const followUpRepository = {
     }
 
     const countResult = await db.query(
-      `SELECT COUNT(*) as total FROM follow_ups f ${whereClause}`,
+      `SELECT COUNT(*) as total FROM fluxion_follow_ups f ${whereClause}`,
       params,
     );
 
     params.push(limit, offset);
     const result = await db.query(
       `SELECT f.*, e.subject as email_subject, e."to" as email_to
-       FROM follow_ups f
-       JOIN emails e ON f.email_id = e.id
+       FROM fluxion_follow_ups f
+       JOIN fluxion_emails e ON f.email_id = e.id
        ${whereClause}
        ORDER BY f.created_at DESC
        LIMIT $${params.length - 1} OFFSET $${params.length}`,
@@ -128,7 +128,7 @@ export const followUpRepository = {
     }
 
     const result = await db.query(
-      `UPDATE follow_ups SET ${setClauses.join(", ")} WHERE id = $1 RETURNING *`,
+      `UPDATE fluxion_follow_ups SET ${setClauses.join(", ")} WHERE id = $1 RETURNING *`,
       params,
     );
     return result.rows[0] || null;

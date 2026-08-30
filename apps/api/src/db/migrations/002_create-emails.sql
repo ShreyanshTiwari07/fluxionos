@@ -1,9 +1,9 @@
 -- Up Migration
 CREATE TYPE email_status AS ENUM ('scheduled', 'sending', 'sent', 'failed', 'cancelled');
 
-CREATE TABLE emails (
+CREATE TABLE fluxion_emails (
   id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id           UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  user_id           UUID NOT NULL REFERENCES fluxion_users(id) ON DELETE CASCADE,
   "to"              TEXT[] NOT NULL,
   cc                TEXT[],
   subject           VARCHAR(998) NOT NULL,
@@ -19,10 +19,10 @@ CREATE TABLE emails (
   updated_at        TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_emails_user_id ON emails(user_id);
-CREATE INDEX idx_emails_status_scheduled ON emails(status, scheduled_at) WHERE status = 'scheduled';
-CREATE INDEX idx_emails_gmail_thread ON emails(gmail_thread_id) WHERE gmail_thread_id IS NOT NULL;
+CREATE INDEX idx_fluxion_emails_user_id ON fluxion_emails(user_id);
+CREATE INDEX idx_fluxion_emails_status_scheduled ON fluxion_emails(status, scheduled_at) WHERE status = 'scheduled';
+CREATE INDEX idx_fluxion_emails_gmail_thread ON fluxion_emails(gmail_thread_id) WHERE gmail_thread_id IS NOT NULL;
 
 -- Down Migration
--- DROP TABLE emails;
+-- DROP TABLE fluxion_emails;
 -- DROP TYPE email_status;

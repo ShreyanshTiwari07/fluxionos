@@ -1,5 +1,5 @@
 -- Up Migration
-CREATE TABLE users (
+CREATE TABLE fluxion_users (
   id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   email               VARCHAR(255) NOT NULL UNIQUE,
   name                VARCHAR(255),
@@ -14,8 +14,8 @@ CREATE TABLE users (
   updated_at          TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_users_email ON users(email);
+CREATE INDEX idx_fluxion_users_email ON fluxion_users(email);
 
 -- Down Migration
--- DROP INDEX idx_users_email;
--- DROP TABLE users;
+-- DROP INDEX idx_fluxion_users_email;
+-- DROP TABLE fluxion_users;
