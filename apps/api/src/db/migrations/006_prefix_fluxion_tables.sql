@@ -43,10 +43,16 @@ CREATE INDEX IF NOT EXISTS idx_fluxion_users_email ON fluxion_users(email);
 
 -- The user_id foreign keys were dropped along with the old users table (the
 -- email_id one survived, since it points at a table that was only renamed).
--- Refuse to proceed rather than silently discarding rows if any are orphaned.
+--
+-- Rows predating that drop reference users that no longer exist. Rather than
+-- delete them or skip the constraint, add it NOT VALID: existing rows are
+-- exempted, every future insert and update is still enforced. Where nothing is
+-- orphaned the constraint is validated immediately, so a clean database gets a
+-- fully valid key.
 DO $do$
 DECLARE
   t      text;
+  cname  text;
   orphan int;
 BEGIN
   FOREACH t IN ARRAY ARRAY['fluxion_emails', 'fluxion_follow_ups', 'fluxion_drafts'] LOOP
@@ -54,23 +60,28 @@ BEGIN
       CONTINUE;
     END IF;
 
-    IF EXISTS (SELECT 1 FROM pg_constraint WHERE conname = t || '_user_id_fkey') THEN
+    cname := t || '_user_id_fkey';
+
+    IF EXISTS (SELECT 1 FROM pg_constraint WHERE conname = cname) THEN
       CONTINUE;
     END IF;
+
+    EXECUTE format(
+      'ALTER TABLE %I ADD CONSTRAINT %I FOREIGN KEY (user_id)
+         REFERENCES fluxion_users(id) ON DELETE CASCADE NOT VALID', t, cname);
 
     -- EXECUTE does not set FOUND, so capture the result explicitly.
     EXECUTE format(
       'SELECT 1 FROM %I x LEFT JOIN fluxion_users u ON u.id = x.user_id
          WHERE u.id IS NULL LIMIT 1', t) INTO orphan;
 
-    IF orphan IS NOT NULL THEN
-      RAISE EXCEPTION
-        '% has rows whose user_id is absent from fluxion_users; resolve before adding the foreign key', t;
+    IF orphan IS NULL THEN
+      EXECUTE format('ALTER TABLE %I VALIDATE CONSTRAINT %I', t, cname);
+    ELSE
+      RAISE NOTICE
+        '% keeps rows whose user_id is absent from fluxion_users; % left NOT VALID. After cleaning them up run: ALTER TABLE % VALIDATE CONSTRAINT %;',
+        t, cname, t, cname;
     END IF;
-
-    EXECUTE format(
-      'ALTER TABLE %I ADD CONSTRAINT %I FOREIGN KEY (user_id)
-         REFERENCES fluxion_users(id) ON DELETE CASCADE', t, t || '_user_id_fkey');
   END LOOP;
 END
 $do$;
